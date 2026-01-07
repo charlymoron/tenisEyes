@@ -1,0 +1,45 @@
+name: Build Windows EXE con Pygame
+
+on:
+  push:
+    branches: [ main, master ]  # Cubre main o master
+  workflow_dispatch:  # Botón manual
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+
+    - name: Configurar Python 3.11
+      uses: actions/setup-python@v5  # v5 es lo último en 2026
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip para acelerar builds futuros
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: $$ {{ runner.os }}-pip- $${{ hashFiles('requirements.txt') }}
+
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install pygame pyinstaller
+
+    - name: Build EXE (onefile, windowed, icono opcional)
+      run: |
+        pyinstaller --onefile --windowed --name "JuegoReaccion" main.py
+        # Cambié nombre a "JuegoReaccion.exe" para que sea pro
+
+    - name: Verificar EXE generado
+      run: dir dist  # Lista archivos para debug
+
+    - name: Subir EXE como artifact (expira en 90 días)
+      uses: actions/upload-artifact@v4
+      with:
+        name: JuegoReaccion-Windows-EXE
+        path: dist/JuegoReaccion.exe  # El nuevo nombre
+        retention-days: 90
